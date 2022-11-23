@@ -168,6 +168,7 @@ while [ $# -gt 0 ]; do
                 len=${#array[@]};
                 SPOTIFY_SEARCH_API="https://api.spotify.com/v1/search";
                 SPOTIFY_TOKEN_URI="https://accounts.spotify.com/api/token";
+                SPOTIFY_SAVE_API="https://api.spotify.com/v1/me/tracks"
                 if [ -z "${CLIENT_ID}" ]; then
                     cecho "Invalid Client ID, please update ${USER_CONFIG_FILE}";
                     showAPIHelp;
@@ -205,8 +206,22 @@ while [ $# -gt 0 ]; do
                         | sed 's/,.*//g' \
                     )
                 }
-           cecho "test"
-           cecho "${SPOTIFY_TOKEN_URI}"
+           getAccessToken
+             cecho "test"
+           uri=`osascript -e 'tell application "Spotify" to spotify url of current track'`;
+            remove='spotify:track:'
+            uriSnip=${uri#$remove}
+            curl --request PUT \
+            --url https://api.spotify.com/v1/me/tracks \
+            -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
+            -H 'Content-Type: application/json' \
+            -d "{
+             'ids': [
+             ${uriSnip}
+                      ]
+                    }"
+          
+           cecho "${uriSnip}"
             break ;;
         "play"    )
             if [ $# != 1 ]; then
