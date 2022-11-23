@@ -162,6 +162,52 @@ while [ $# -gt 0 ]; do
     arg=$1;
 
     case $arg in
+
+        "save"  )
+      array=( $@ );
+                len=${#array[@]};
+                SPOTIFY_SEARCH_API="https://api.spotify.com/v1/search";
+                SPOTIFY_TOKEN_URI="https://accounts.spotify.com/api/token";
+                if [ -z "${CLIENT_ID}" ]; then
+                    cecho "Invalid Client ID, please update ${USER_CONFIG_FILE}";
+                    showAPIHelp;
+                    return 1
+                fi
+                if [ -z "${CLIENT_SECRET}" ]; then
+                    cecho "Invalid Client Secret, please update ${USER_CONFIG_FILE}";
+                    showAPIHelp;
+                    return 1
+                fi
+                SHPOTIFY_CREDENTIALS=$(printf "${CLIENT_ID}:${CLIENT_SECRET}" | base64 | tr -d "\n"|tr -d '\r');
+                SPOTIFY_PLAY_URI="";
+
+                getAccessToken() {
+                    cecho "Connecting to Spotify's API";
+
+                    SPOTIFY_TOKEN_RESPONSE_DATA=$( \
+                        curl "${SPOTIFY_TOKEN_URI}" \
+                            --silent \
+                            -X "POST" \
+                            -H "Authorization: Basic ${SHPOTIFY_CREDENTIALS}" \
+                            -d "grant_type=client_credentials" \
+                    )
+                    if ! [[ "${SPOTIFY_TOKEN_RESPONSE_DATA}" =~ "access_token" ]]; then
+                        cecho "Authorization failed, please check ${USER_CONFG_FILE}"
+                        cecho "${SPOTIFY_TOKEN_RESPONSE_DATA}"
+                        showAPIHelp
+                        return 1
+                    fi
+                    SPOTIFY_ACCESS_TOKEN=$( \
+                        printf "${SPOTIFY_TOKEN_RESPONSE_DATA}" \
+                        | grep -E -o '"access_token":".*",' \
+                        | sed 's/"access_token"://g' \
+                        | sed 's/"//g' \
+                        | sed 's/,.*//g' \
+                    )
+                }
+           cecho "test"
+           cecho "${SPOTIFY_TOKEN_URI}"
+            break ;;
         "play"    )
             if [ $# != 1 ]; then
                 # There are additional arguments, so find out how many
@@ -223,6 +269,7 @@ while [ $# -gt 0 ]; do
                             -d "type=$type&limit=1&offset=0" \
                         | command grep -E -o "spotify:$type:[a-zA-Z0-9]+" -m 1
                     )
+                    
                 }
 
                 case $2 in
@@ -285,6 +332,7 @@ while [ $# -gt 0 ]; do
             break ;;
 
         "pause"    )
+        
             state=`osascript -e 'tell application "Spotify" to player state as string'`;
             if [ $state = "playing" ]; then
               cecho "Pausing Spotify.";
