@@ -194,6 +194,9 @@ while [ $# -gt 0 ]; do
                             --data-urlencode "redirect_uri:$SPOTIFY_CALLBACK" \
                             )
                             cecho $SPOTIFY_AUTH_RESPONSE
+
+                            #location header contains redirect url to login page for spotify
+                            #login page redirects to callback URI with access token with permissions
                 }
                 getAccessToken() {
                     cecho "Connecting to Spotify's API";
