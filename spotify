@@ -163,12 +163,12 @@ while [ $# -gt 0 ]; do
 
     case $arg in
 
-        "save"  )
+       "save"  )
       array=( $@ );
                 len=${#array[@]};
                 SPOTIFY_SEARCH_API="https://api.spotify.com/v1/search";
                 SPOTIFY_TOKEN_URI="https://accounts.spotify.com/api/token";
-                SPOTIFY_SAVE_API="https://api.spotify.com/v1/me/tracks"
+                SPOTIFY_AUTH_URI="https://accounts.spotify.com/authorize?"
                 if [ -z "${CLIENT_ID}" ]; then
                     cecho "Invalid Client ID, please update ${USER_CONFIG_FILE}";
                     showAPIHelp;
@@ -180,8 +180,21 @@ while [ $# -gt 0 ]; do
                     return 1
                 fi
                 SHPOTIFY_CREDENTIALS=$(printf "${CLIENT_ID}:${CLIENT_SECRET}" | base64 | tr -d "\n"|tr -d '\r');
+                SPOTIFY_CALLBACK="http://localhost:8888/"
+                SCOPE="user-library-modify"
                 SPOTIFY_PLAY_URI="";
-
+                getAuthorization(){
+                    cecho "Requesting User Authorization"
+                    curl -w -g "${SPOTIFY_AUTH_URI}" -I -L -s -S $URL -o /dev/null
+                  SPOTIFY_AUTH_RESPONSE=$( \
+                         curl -s -G -L $SPOTIFY_AUTH_URI \
+                            --data-urlencode "response_type=code" \
+                            --data-urlencode "client_id=$CLIENT_ID" \
+                            --data-urlencode "scope=$SCOPE" \
+                            --data-urlencode "redirect_uri:$SPOTIFY_CALLBACK" \
+                            )
+                            cecho $SPOTIFY_AUTH_RESPONSE
+                }
                 getAccessToken() {
                     cecho "Connecting to Spotify's API";
 
@@ -205,8 +218,10 @@ while [ $# -gt 0 ]; do
                         | sed 's/"//g' \
                         | sed 's/,.*//g' \
                     )
+                    cecho "${SPOTIFY_ACCESS_TOKEN}"
                 }
-           getAccessToken
+               
+                getAccessToken
              cecho "test"
            uri=`osascript -e 'tell application "Spotify" to spotify url of current track'`;
             remove='spotify:track:'
@@ -217,7 +232,7 @@ while [ $# -gt 0 ]; do
             -H 'Content-Type: application/json' \
             -d "{
              'ids': [
-             ${uriSnip}
+             404ZIfgGYd8VnwUn0HA1Pd
                       ]
                     }"
           
